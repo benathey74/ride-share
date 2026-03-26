@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Adonis backend is linted from `backend/` with its own config.
+    "backend/**",
   ]),
 ]);
 
