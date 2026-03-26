@@ -91,6 +91,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/passenger_route_suggestions_controller').default['index']>>>
     }
   }
+  'passenger_trips.browse': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/passenger/public-trips/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/passenger_trips_controller').default['browse']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/passenger_trips_controller').default['browse']>>>
+    }
+  }
   'passenger_trips.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/passenger/trips/:id'
@@ -113,6 +125,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/passenger_trip_request_validator').createTripRequestValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/trip_requests_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/trip_requests_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'passenger_corridor_interests.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/corridor_interest_validator').expressCorridorInterestValidator)>>
+      paramsTuple: [ParamValue]
+      params: { routeTemplateId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/corridor_interest_validator').expressCorridorInterestValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/passenger_corridor_interests_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/passenger_corridor_interests_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'driver_dashboard.index': {

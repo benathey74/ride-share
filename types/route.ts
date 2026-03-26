@@ -25,9 +25,9 @@ export type RouteTemplateScheduleRow = {
 export type RouteMatchHint = "corridor_pickup" | "pickup_zone" | "corridor_destination";
 
 export const ROUTE_MATCH_HINT_LABELS: Record<RouteMatchHint, string> = {
-  corridor_pickup: "Close to your pickup",
-  pickup_zone: "Within pickup zone",
-  corridor_destination: "Near route destination",
+  corridor_pickup: "Pickup near their corridor",
+  pickup_zone: "Pickup in their zone",
+  corridor_destination: "Destination fits their route",
 };
 
 /**
@@ -57,4 +57,10 @@ export type RouteSuggestion = {
   schedules?: RouteTemplateScheduleRow[];
   /** Present when search coords were sent; relative to rider search only. */
   matchHints?: RouteMatchHint[];
+  /** Rider's existing "send note to driver" state for this corridor (persists across refresh). */
+  corridorInterest?: {
+    hasContacted: boolean;
+    message: string | null;
+    updatedAt: string;
+  } | null;
 };

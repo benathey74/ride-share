@@ -15,12 +15,15 @@ import {
 } from "@/features/driver/api";
 import { driverKeys } from "@/features/driver/query-keys";
 import { passengerKeys } from "@/features/passenger/query-keys";
+import { tripChatKeys } from "@/features/trip-chat/query-keys";
 import type { CreateDriverRouteTemplateInput } from "@/types/driver";
 
 export function useDriverDashboardQuery() {
   return useQuery({
     queryKey: driverKeys.dashboard(),
     queryFn: fetchDriverDashboard,
+    staleTime: 20 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -65,6 +68,9 @@ export function useAcceptDriverTripRequestMutation(tripInstanceId: string) {
         queryClient.invalidateQueries({ queryKey: driverKeys.dashboard() }),
         queryClient.invalidateQueries({
           queryKey: driverKeys.tripRequests(tripInstanceId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: tripChatKeys.messages(tripInstanceId),
         }),
         // Rider’s trip detail, My trips, and home read seat-request state from passenger APIs.
         queryClient.invalidateQueries({ queryKey: passengerKeys.all }),

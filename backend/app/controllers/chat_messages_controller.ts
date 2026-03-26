@@ -7,7 +7,9 @@ const chatService = new ChatService()
 export default class ChatMessagesController {
   async index({ currentUser, params, serialize }: HttpContext) {
     const tripInstanceId = Number(params.tripId)
-    const messages = await chatService.listMessages(currentUser.id, tripInstanceId)
+    const messages = await chatService.listMessages(currentUser.id, tripInstanceId, {
+      isAdmin: currentUser.isAdmin,
+    })
     return serialize({ messages })
   }
 
@@ -18,7 +20,8 @@ export default class ChatMessagesController {
       currentUser.id,
       tripInstanceId,
       payload.message,
-      payload.recipientUserId ?? null
+      payload.recipientUserId ?? null,
+      { isAdmin: currentUser.isAdmin }
     )
     return serialize({ message })
   }

@@ -21,6 +21,7 @@ import {
   useDeclineDriverTripRequestMutation,
   useDriverTripRequestsQuery,
 } from "@/features/driver/hooks";
+import { TripCoordinationChat } from "@/features/shared/components/trip-coordination-chat";
 import { useAppToast } from "@/features/shared/components/toast-provider";
 import { ROUTES } from "@/lib/constants/routes";
 import { describeApiFailure } from "@/lib/api/errors";
@@ -116,7 +117,8 @@ export function DriverTripRequestsScreen({
                   accept.mutate(row.id, {
                     onSuccess: () =>
                       toast({
-                        message: "Accepted. Rider details unlock for this trip.",
+                        message:
+                          "Seat confirmed. Their pickup and note stay on this screen — add exact coordinates when you’re ready.",
                         variant: "success",
                       }),
                     onError: (err) =>
@@ -127,7 +129,7 @@ export function DriverTripRequestsScreen({
                   })
                 }
               >
-                {rowAccepting(row.id) ? "Accepting…" : "Accept"}
+                {rowAccepting(row.id) ? "Accepting…" : "Accept seat"}
               </Button>
               <Button
                 type="button"
@@ -139,7 +141,7 @@ export function DriverTripRequestsScreen({
                   decline.mutate(row.id, {
                     onSuccess: () =>
                       toast({
-                        message: "Request declined.",
+                        message: "Declined — they can search for another ride.",
                         variant: "success",
                       }),
                     onError: (err) =>
@@ -150,7 +152,7 @@ export function DriverTripRequestsScreen({
                   })
                 }
               >
-                {rowDeclining(row.id) ? "Declining…" : "Decline"}
+                {rowDeclining(row.id) ? "Declining…" : "Decline seat"}
               </Button>
             </div>
           ) : null}
@@ -169,7 +171,7 @@ export function DriverTripRequestsScreen({
         </Button>
         <SectionHeader
           title="Seat requests"
-          description="Each card shows rider alias and approx pickup. Exact details unlock after you accept."
+          description="Pending cards need a decision. After you accept, save their pickup pin so they see exactly where to meet."
           className="flex-1 border-0 pb-0"
         />
       </div>
@@ -197,9 +199,10 @@ export function DriverTripRequestsScreen({
         data.requests.length === 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">No requests</CardTitle>
+              <CardTitle className="text-base">No seat requests</CardTitle>
               <CardDescription>
-                Pending seat requests for this trip will show up here.
+                When a passenger requests a seat on this run, their card shows up here with
+                approximate pickup until you respond.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -235,6 +238,7 @@ export function DriverTripRequestsScreen({
                 </Card>
               );
             })()}
+            <TripCoordinationChat tripInstanceId={tripInstanceId} />
             <div className="space-y-3">{data.requests.map(renderRow)}</div>
           </div>
         )

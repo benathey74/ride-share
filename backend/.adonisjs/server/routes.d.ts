@@ -11,8 +11,10 @@ export type ScannedRoutes = {
     'passenger_home.index': { paramsTuple?: []; params?: {} }
     'passenger_my_trips.index': { paramsTuple?: []; params?: {} }
     'passenger_route_suggestions.index': { paramsTuple?: []; params?: {} }
+    'passenger_trips.browse': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'passenger_trips.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'trip_requests.store': { paramsTuple?: []; params?: {} }
+    'passenger_corridor_interests.store': { paramsTuple: [ParamValue]; params: {'routeTemplateId': ParamValue} }
     'driver_dashboard.index': { paramsTuple?: []; params?: {} }
     'driver_route_templates.store': { paramsTuple?: []; params?: {} }
     'driver_route_templates.index': { paramsTuple?: []; params?: {} }
@@ -43,6 +45,7 @@ export type ScannedRoutes = {
     'passenger_home.index': { paramsTuple?: []; params?: {} }
     'passenger_my_trips.index': { paramsTuple?: []; params?: {} }
     'passenger_route_suggestions.index': { paramsTuple?: []; params?: {} }
+    'passenger_trips.browse': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'passenger_trips.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'driver_dashboard.index': { paramsTuple?: []; params?: {} }
     'driver_route_templates.index': { paramsTuple?: []; params?: {} }
@@ -60,6 +63,7 @@ export type ScannedRoutes = {
     'passenger_home.index': { paramsTuple?: []; params?: {} }
     'passenger_my_trips.index': { paramsTuple?: []; params?: {} }
     'passenger_route_suggestions.index': { paramsTuple?: []; params?: {} }
+    'passenger_trips.browse': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'passenger_trips.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'driver_dashboard.index': { paramsTuple?: []; params?: {} }
     'driver_route_templates.index': { paramsTuple?: []; params?: {} }
@@ -77,6 +81,7 @@ export type ScannedRoutes = {
     'auth_sessions.login': { paramsTuple?: []; params?: {} }
     'auth_sessions.logout': { paramsTuple?: []; params?: {} }
     'trip_requests.store': { paramsTuple?: []; params?: {} }
+    'passenger_corridor_interests.store': { paramsTuple: [ParamValue]; params: {'routeTemplateId': ParamValue} }
     'driver_route_templates.store': { paramsTuple?: []; params?: {} }
     'driver_trip_requests.accept': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'driver_trip_requests.decline': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

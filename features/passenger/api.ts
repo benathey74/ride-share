@@ -4,6 +4,7 @@ import type {
   PassengerHomeResponse,
   PassengerMyTripRow,
   PassengerMyTripsOverview,
+  PassengerRideBrowse,
   PassengerTripDetail,
   TripInstanceStatus,
   TripRequest,
@@ -101,6 +102,50 @@ function normalizePassengerTripDetail(raw: unknown): PassengerTripDetail {
   };
 }
 
+function normalizeViewerSeatRequestStatus(
+  raw: unknown,
+): TripRequestStatus | null {
+  if (typeof raw !== "string") return null;
+  const k = raw.toLowerCase();
+  if (
+    k === "pending" ||
+    k === "accepted" ||
+    k === "declined" ||
+    k === "cancelled"
+  ) {
+    return k;
+  }
+  return null;
+}
+
+export function normalizePassengerRideBrowse(raw: unknown): PassengerRideBrowse {
+  const detail = normalizePassengerTripDetail(raw);
+  const t = raw as Record<string, unknown>;
+  const sd = t.seatRequestDefaults as Record<string, unknown> | undefined;
+
+  return {
+    tripInstanceId: detail.tripInstanceId,
+    routeStatus: detail.routeStatus,
+    tripDate: detail.tripDate,
+    departureTime: detail.departureTime,
+    seatsTotal: detail.seatsTotal,
+    seatsRemaining: detail.seatsRemaining,
+    host: detail.host,
+    destinationLabel: detail.destinationLabel,
+    route: detail.route,
+    canRequestSeat: Boolean(t.canRequestSeat),
+    viewerIsDriver: Boolean(t.viewerIsDriver),
+    viewerMayOpenPrivateDetail: Boolean(t.viewerMayOpenPrivateDetail),
+    viewerSeatRequestStatus: normalizeViewerSeatRequestStatus(t.viewerSeatRequestStatus),
+    seatRequestDefaults: {
+      approxPickupLabel: String(sd?.approxPickupLabel ?? ""),
+      approxPickupLat: String(sd?.approxPickupLat ?? ""),
+      approxPickupLng: String(sd?.approxPickupLng ?? ""),
+      approxPickupRadiusMeters: Number(sd?.approxPickupRadiusMeters ?? 400),
+    },
+  };
+}
+
 type RawRouteRow = {
   routeTemplateId?: string;
   name?: string;
@@ -119,6 +164,11 @@ type RawRouteRow = {
   totalDurationSeconds?: number | null;
   schedules?: { id: number; dayOfWeek: number; isActive: boolean }[];
   matchHints?: string[];
+  corridorInterest?: {
+    hasContacted?: boolean;
+    message?: string | null;
+    updatedAt?: string;
+  } | null;
 };
 
 const MATCH_HINTS = new Set<string>(["corridor_pickup", "pickup_zone", "corridor_destination"]);
@@ -130,6 +180,7 @@ function toRouteMatchHints(raw: string[] | undefined): RouteMatchHint[] | undefi
 }
 
 function toRouteSuggestion(row: RawRouteRow): RouteSuggestion {
+  const ci = row.corridorInterest;
   return {
     routeTemplateId: String(row.routeTemplateId ?? ""),
     name: String(row.name ?? ""),
@@ -160,6 +211,14 @@ function toRouteSuggestion(row: RawRouteRow): RouteSuggestion {
         : Number(row.totalDurationSeconds),
     schedules: Array.isArray(row.schedules) ? row.schedules : undefined,
     matchHints: toRouteMatchHints(row.matchHints),
+    corridorInterest:
+      ci && Boolean(ci.hasContacted)
+        ? {
+            hasContacted: true,
+            message: ci.message == null ? null : String(ci.message),
+            updatedAt: String(ci.updatedAt ?? ""),
+          }
+        : null,
   };
 }
 
@@ -328,6 +387,19 @@ export async function fetchPassengerTripDetail(
   return normalizePassengerTripDetail(trip);
 }
 
+/**
+ * GET /api/v1/passenger/public-trips/:id — public ride summary (no booking required).
+ */
+export async function fetchPassengerRideBrowse(
+  tripInstanceId: string,
+): Promise<PassengerRideBrowse> {
+  const json = await apiGetJson(
+    `/api/v1/passenger/public-trips/${encodeURIComponent(tripInstanceId)}`,
+  );
+  const { trip } = unwrapData<{ trip: unknown }>(json);
+  return normalizePassengerRideBrowse(trip);
+}
+
 function pickupSummaryFromPickupDto(
   pickup: TripRequestPickup,
   requestStatus: TripRequestStatus | null,
@@ -432,4 +504,24 @@ export async function createPassengerTripRequest(
   });
   const { tripRequest } = unwrapData<{ tripRequest: unknown }>(json);
   return mapWireTripRequest(tripRequest);
+}
+
+/**
+ * When a corridor matches search but no bookable trip exists — notifies the route owner (dashboard only).
+ */
+export async function expressPassengerCorridorInterest(
+  routeTemplateId: string,
+  message: string | null,
+): Promise<{ updated: boolean }> {
+  const id = routeTemplateId.trim();
+  const body =
+    message != null && message.trim() !== ""
+      ? { message: message.trim() }
+      : {};
+  const json = await apiPostJson(
+    `/api/v1/passenger/route-templates/${encodeURIComponent(id)}/corridor-interest`,
+    body,
+  );
+  const data = unwrapData<{ ok: boolean; updated?: boolean }>(json);
+  return { updated: Boolean(data.updated) };
 }

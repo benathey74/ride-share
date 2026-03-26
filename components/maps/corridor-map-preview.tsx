@@ -30,6 +30,11 @@ export type CorridorMapPreviewProps = {
   emphasis?: boolean;
   className?: string;
   helperText?: string;
+  /**
+   * When false, the map does not capture pointer events (scroll and taps reach the page / buttons
+   * below). Use on browse cards where the map is illustrative and CTAs sit under it.
+   */
+  pointerEvents?: "auto" | "none";
 };
 
 /** Static placeholder when coords or API are unavailable (reuse outside this component). */
@@ -78,6 +83,7 @@ export function CorridorMapPreview({
   emphasis = false,
   helperText,
   className,
+  pointerEvents = "auto",
 }: CorridorMapPreviewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -271,7 +277,12 @@ export function CorridorMapPreview({
 
   return (
     <div
-      className={cn("overflow-hidden rounded-2xl ring-1 ring-border", heightClass, className)}
+      className={cn(
+        "overflow-hidden rounded-2xl ring-1 ring-border",
+        heightClass,
+        pointerEvents === "none" && "pointer-events-none touch-none",
+        className,
+      )}
       role="region"
       aria-label="Map: route path, start and destination markers, and pickup when shown"
     >

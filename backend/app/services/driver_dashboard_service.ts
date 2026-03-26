@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
+import PassengerRouteCorridorInterest from '#models/passenger_route_corridor_interest'
 import TripInstance from '#models/trip_instance'
 import TripRequest from '#models/trip_request'
 import { TripRequestStatus } from '#constants/trip'
@@ -37,6 +38,15 @@ export default class DriverDashboardService {
       acceptedPassengersToday = Number(row[0].count)
     }
 
+    const corridorInterests = await PassengerRouteCorridorInterest.query()
+      .whereHas('routeTemplate', (q) => {
+        q.where('driver_user_id', driverUserId)
+      })
+      .preload('routeTemplate')
+      .preload('rider', (q) => q.preload('publicProfile'))
+      .orderBy('updated_at', 'desc')
+      .limit(25)
+
     return {
       summary: {
         tripsToday: todaysTrips.length,
@@ -66,6 +76,21 @@ export default class DriverDashboardService {
         destinationLabel:
           req.tripInstance.routeTemplate?.destinationLabel ?? 'Destination',
       })),
+      corridorInterests: corridorInterests.map((row) => {
+        const rt = row.routeTemplate
+        const corridorLabel = rt
+          ? `${rt.originLabel} → ${rt.destinationLabel}`
+          : 'Corridor'
+        const updated = row.updatedAt ?? row.createdAt
+        return {
+          id: String(row.id),
+          routeTemplateId: String(row.routeTemplateId),
+          corridorLabel,
+          rider: privacy.formatPublicProfile(row.rider.publicProfile ?? null),
+          message: row.message,
+          updatedAt: updated.toISO() ?? '',
+        }
+      }),
     }
   }
 }

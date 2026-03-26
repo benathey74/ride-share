@@ -105,6 +105,23 @@ export class PassengerProfileSchema extends BaseModel {
   declare usualCommuteDays: string | null
 }
 
+export class PassengerRouteCorridorInterestSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'message', 'riderUserId', 'routeTemplateId', 'updatedAt'] as const
+  $columns = PassengerRouteCorridorInterestSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare message: string | null
+  @column()
+  declare riderUserId: number
+  @column()
+  declare routeTemplateId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class PublicProfileSchema extends BaseModel {
   static $columns = ['alias', 'avatar', 'completedTrips', 'createdAt', 'id', 'onTimeScore', 'rating', 'updatedAt', 'userId'] as const
   $columns = PublicProfileSchema.$columns

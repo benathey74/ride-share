@@ -33,5 +33,5 @@ export const privacyNoticePhrases = {
   betweenAliasAvatar: " and ",
   avatarWord: "avatar",
   afterAvatar:
-    " only. Pickup stays approximate until a ride is accepted.",
+    " only. Pickup stays approximate until the trip has a confirmed pickup point.",
 } as const;

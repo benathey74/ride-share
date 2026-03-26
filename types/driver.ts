@@ -42,11 +42,22 @@ export type DriverPendingSeatRequestRow = {
   riderLabel: string;
 };
 
+/** Passenger interest when a corridor matched search but no bookable trip yet (not trip chat). */
+export type DriverCorridorInterestRow = {
+  id: string;
+  routeTemplateId: string;
+  corridorLabel: string;
+  riderLabel: string;
+  messagePreview: string | null;
+  updatedAt: string;
+};
+
 export type DriverDashboardData = {
   summary: DriverDashboardSummary;
   quickActions: DriverQuickAction[];
   todaysTrips: DriverTodayTripRow[];
   pendingSeatRequests: DriverPendingSeatRequestRow[];
+  corridorInterests: DriverCorridorInterestRow[];
 };
 
 /**
@@ -73,6 +84,14 @@ export type DriverDashboardResponse = {
     status?: string;
     destinationLabel?: string;
     rider?: { alias?: string; avatar?: string; avatarEmoji?: string } | null;
+  }>;
+  corridorInterests?: Array<{
+    id?: string;
+    routeTemplateId?: string;
+    corridorLabel?: string;
+    rider?: { alias?: string; avatar?: string; avatarEmoji?: string } | null;
+    message?: string | null;
+    updatedAt?: string;
   }>;
 };
 

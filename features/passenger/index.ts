@@ -4,8 +4,10 @@ export {
   fetchPassengerHome,
   fetchPassengerRouteSuggestions,
   fetchPassengerMyTripsOverview,
+  fetchPassengerRideBrowse,
   fetchPassengerTripDetail,
   mapWireTripRequest,
+  normalizePassengerRideBrowse,
   passengerRouteSearchParamsFromForm,
   type CreatePassengerTripRequestInput,
   type PassengerRouteSearchParams,
@@ -14,6 +16,7 @@ export {
   useCreatePassengerTripRequestMutation,
   usePassengerHomeQuery,
   usePassengerMyTripsOverviewQuery,
+  usePassengerRideBrowseQuery,
   usePassengerRouteSuggestionsQuery,
   usePassengerTripDetailQuery,
 } from "./hooks";
@@ -31,11 +34,14 @@ export type {
   PassengerHomeResponse,
   PassengerMyTripRow,
   PassengerMyTripsOverview,
+  PassengerRideBrowse,
   PassengerTripDetail,
   RouteSuggestion,
   TripRequest,
 } from "./types";
+export { PassengerRouteCorridorCard } from "./components/passenger-route-corridor-card";
 export { HomeScreen } from "./screens/home-screen";
 export { SearchResultsScreen } from "./screens/search-results-screen";
+export { PassengerRideBrowseScreen } from "./screens/ride-browse-screen";
 export { PassengerTripDetailScreen } from "./screens/trip-detail-screen";
 export { PassengerMyTripsScreen } from "./screens/my-trips-screen";

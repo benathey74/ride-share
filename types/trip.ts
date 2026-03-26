@@ -86,6 +86,32 @@ export type PassengerHomeResponse = {
 export type PassengerHomeData = PassengerHomeResponse;
 
 /**
+ * Public browse payload (`GET /api/v1/passenger/public-trips/:id`).
+ * Template-level corridor + timing only; never exact rider pickup or other riders’ data.
+ */
+export type PassengerRideBrowse = {
+  tripInstanceId: string;
+  routeStatus: TripInstanceStatus;
+  tripDate: string;
+  departureTime: string;
+  seatsTotal: number;
+  seatsRemaining: number;
+  host: PublicProfile | null;
+  destinationLabel: string;
+  route: PassengerTripDetail["route"];
+  canRequestSeat: boolean;
+  viewerIsDriver: boolean;
+  viewerMayOpenPrivateDetail: boolean;
+  viewerSeatRequestStatus: TripRequestStatus | null;
+  seatRequestDefaults: {
+    approxPickupLabel: string;
+    approxPickupLat: string;
+    approxPickupLng: string;
+    approxPickupRadiusMeters: number;
+  };
+};
+
+/**
  * Normalized passenger trip detail (`GET /api/v1/passenger/trips/:id`).
  * Pickup privacy per `myRequests[].pickup` follows backend `PrivacyViewService`.
  */

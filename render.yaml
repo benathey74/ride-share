@@ -1,0 +1,16 @@
+# Render Blueprint — Adonis API from monorepo `backend/` (avoids root Yarn/Next detection).
+# Connect this repo in Render → New Blueprint Instance, or copy commands into a manual Web Service.
+# https://render.com/docs/blueprint-spec
+#
+# Set all secrets (APP_KEY, DB_*, etc.) in the Render dashboard or via envVarGroups.
+
+services:
+  - type: web
+    name: ride-share-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && node ace build && cd build && npm ci --omit=dev
+    startCommand: cd build && node bin/server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "24"

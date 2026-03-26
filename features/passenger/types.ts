@@ -4,6 +4,7 @@ export type {
   PassengerHomeResponse,
   PassengerMyTripRow,
   PassengerMyTripsOverview,
+  PassengerRideBrowse,
   PassengerTripDetail,
 } from "@/types/trip";
 export type { RouteSuggestion } from "@/types/route";

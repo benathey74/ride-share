@@ -23,5 +23,7 @@ export const passengerKeys = {
         ] as const),
   tripDetail: (tripInstanceId: string) =>
     [...passengerKeys.all, "trip", tripInstanceId] as const,
+  rideBrowse: (tripInstanceId: string) =>
+    [...passengerKeys.all, "ride-browse", tripInstanceId] as const,
   myTrips: () => [...passengerKeys.all, "my-trips"] as const,
 };

@@ -11,6 +11,7 @@ import {
   writeDevUserIdOverride,
 } from "@/lib/dev/dev-user-storage";
 import { DEV_TEST_USER_PRESETS } from "@/lib/dev/dev-test-users";
+import { readDevHintsEnabled, writeDevHintsEnabled } from "@/lib/dev/dev-hints";
 import { cn } from "@/lib/utils";
 
 type DevUserSwitcherProps = {
@@ -26,6 +27,7 @@ export function DevUserSwitcher({ layout }: DevUserSwitcherProps) {
   const queryClient = useQueryClient();
   const { data: me } = useAuthMeQuery();
   const envDefault = process.env.NEXT_PUBLIC_DEV_USER_ID?.trim() || "1";
+  const [devHintsOn, setDevHintsOn] = useState<boolean>(() => readDevHintsEnabled());
 
   const [selected, setSelected] = useState<string>(
     () => readDevUserIdOverride() ?? ENV_SENTINEL,
@@ -41,6 +43,15 @@ export function DevUserSwitcher({ layout }: DevUserSwitcherProps) {
         writeDevUserIdOverride(next);
       }
       setSelected(next);
+      void queryClient.invalidateQueries();
+    },
+    [queryClient],
+  );
+
+  const toggleDevHints = useCallback(
+    (next: boolean) => {
+      writeDevHintsEnabled(next);
+      setDevHintsOn(next);
       void queryClient.invalidateQueries();
     },
     [queryClient],
@@ -100,6 +111,14 @@ export function DevUserSwitcher({ layout }: DevUserSwitcherProps) {
             → {activeLabel}
           </span>
         </div>
+        <label className="mt-1 inline-flex items-center gap-2 text-[10px] text-amber-900/90 dark:text-amber-100/90">
+          <input
+            type="checkbox"
+            checked={devHintsOn}
+            onChange={(e) => toggleDevHints(e.target.checked)}
+          />
+          Show debug hints
+        </label>
       </div>
     );
   }
@@ -141,6 +160,14 @@ export function DevUserSwitcher({ layout }: DevUserSwitcherProps) {
           </option>
         ))}
       </select>
+      <label className="mt-1 inline-flex items-center gap-2 text-[9px] text-amber-700 dark:text-amber-300">
+        <input
+          type="checkbox"
+          checked={devHintsOn}
+          onChange={(e) => toggleDevHints(e.target.checked)}
+        />
+        Debug hints
+      </label>
     </div>
   );
 }

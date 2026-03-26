@@ -267,4 +267,61 @@ export default class PrivacyViewService {
       ),
     }
   }
+
+  /**
+   * Public browse DTO for a trip instance: corridor + timing + seats only.
+   * Never includes other riders, messages, or exact pickup. Seat-request defaults use the published
+   * template origin (same privacy class as route search), not rider-specific pins.
+   */
+  shapePassengerTripBrowse(input: {
+    trip: TripInstance
+    driverPublicProfile: PublicProfile | null
+    templateOriginLabel: string | null
+    templatePickupRadiusM: number
+    canRequestSeat: boolean
+    viewerIsDriver: boolean
+    viewerMayOpenPrivateDetail: boolean
+    viewerSeatRequestStatus: string | null
+  }) {
+    const { trip, driverPublicProfile, templateOriginLabel, templatePickupRadiusM } = input
+    const originLat = trip.routeTemplate?.originLat ?? ''
+    const originLng = trip.routeTemplate?.originLng ?? ''
+
+    return {
+      tripInstanceId: String(trip.id),
+      routeStatus: trip.routeStatus,
+      tripDate: trip.tripDate,
+      departureTime: trip.departureTime,
+      seatsTotal: trip.seatsTotal,
+      seatsRemaining: trip.seatsRemaining,
+      host: this.formatPublicProfile(driverPublicProfile),
+      destinationLabel: trip.routeTemplate?.destinationLabel ?? 'Destination (see route template)',
+      route: {
+        approximatePickupLabel: this.approximatePickupLabel(
+          templateOriginLabel ?? 'Pickup area',
+          templatePickupRadiusM
+        ),
+        originLat,
+        originLng,
+        destinationLat: trip.routeTemplate?.destinationLat ?? '',
+        destinationLng: trip.routeTemplate?.destinationLng ?? '',
+        pickupFuzzRadiusM: templatePickupRadiusM,
+        routePolyline: trip.routePolyline ?? trip.routeTemplate?.routePolyline ?? null,
+        totalDistanceMeters:
+          trip.totalDistanceMeters ?? trip.routeTemplate?.totalDistanceMeters ?? null,
+        totalDurationSeconds:
+          trip.totalDurationSeconds ?? trip.routeTemplate?.totalDurationSeconds ?? null,
+      },
+      canRequestSeat: input.canRequestSeat,
+      viewerIsDriver: input.viewerIsDriver,
+      viewerMayOpenPrivateDetail: input.viewerMayOpenPrivateDetail,
+      viewerSeatRequestStatus: input.viewerSeatRequestStatus,
+      seatRequestDefaults: {
+        approxPickupLabel: templateOriginLabel ?? 'Pickup area',
+        approxPickupLat: originLat,
+        approxPickupLng: originLng,
+        approxPickupRadiusMeters: templatePickupRadiusM,
+      },
+    }
+  }
 }

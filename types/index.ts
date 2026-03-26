@@ -25,6 +25,7 @@ export type {
   PassengerHomeData,
   PassengerHomeHero,
   PassengerHomeResponse,
+  PassengerRideBrowse,
   TripInstance,
   TripInstanceStatus,
   TripRequest,

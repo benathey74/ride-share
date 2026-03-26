@@ -92,6 +92,21 @@ function formatReportWhen(iso: string): string {
   });
 }
 
+function driverApprovalBadgeLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "Driver · awaiting review";
+    case "approved":
+      return "Driver · approved";
+    case "rejected":
+      return "Driver · rejected";
+    case "revoked":
+      return "Driver · revoked";
+    default:
+      return `Driver · ${status.replace(/_/g, " ")}`;
+  }
+}
+
 function formatVehicleLine(driver: AdminUserDriverDetails): string {
   const parts = [driver.vehicleMake, driver.vehicleModel].filter(
     (s): s is string => typeof s === "string" && s.trim() !== "",
@@ -205,7 +220,7 @@ function UserRowCard({
         {isPendingApplication ? (
           <div className="flex items-center gap-2">
             <Badge className="rounded-full border-amber-600/40 bg-amber-500/15 text-[11px] font-semibold uppercase tracking-wide text-amber-950 dark:text-amber-100">
-              Driver application — review
+              Needs driver review
             </Badge>
           </div>
         ) : null}
@@ -240,13 +255,13 @@ function UserRowCard({
               <Badge
                 variant="outline"
                 className={cn(
-                  "rounded-full capitalize",
+                  "rounded-full",
                   dStatus === "pending" && "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-50",
                   dStatus === "rejected" && "border-destructive/40 bg-destructive/10 text-destructive",
                   dStatus === "approved" && "border-emerald-600/35 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
                 )}
               >
-                Driver: {dStatus}
+                {driverApprovalBadgeLabel(dStatus)}
               </Badge>
             ) : null}
           </div>
@@ -267,12 +282,12 @@ function UserRowCard({
         {canRejectDriver || canApproveDriver ? (
           <div className="rounded-2xl border border-border/70 bg-background/60 px-3 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Driver decision
+              Driver access
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {dStatus === "pending"
-                ? "Verify the vehicle details above, then approve or reject this application."
-                : "You can restore driver access if the member has corrected their profile."}
+                ? "Check plate, seats, and notes against your policy — approve only when you’re satisfied."
+                : "Re-approve after the member fixes their profile, or keep access off if it still doesn’t meet the bar."}
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
@@ -292,7 +307,7 @@ function UserRowCard({
                   approveMutation.mutate({ userId: uid });
                 }}
               >
-                {approving ? "Approving…" : "Approve driver"}
+                {approving ? "Approving…" : "Approve to drive"}
               </Button>
               {canRejectDriver ? (
                 <Button
@@ -303,7 +318,7 @@ function UserRowCard({
                   disabled={busy || moderationSheetOpen}
                   onClick={() => setModerationDialog("reject")}
                 >
-                  Reject application
+                  Reject
                 </Button>
               ) : null}
             </div>
@@ -543,13 +558,19 @@ export function AdminDashboardScreen() {
       </section>
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Users</h2>
-          {pendingDriverCount > 0 ? (
-            <Badge className="rounded-full border-amber-500/40 bg-amber-500/12 text-[11px] font-semibold text-amber-950 dark:text-amber-50">
-              {pendingDriverCount} driver application{pendingDriverCount === 1 ? "" : "s"} pending
-            </Badge>
-          ) : null}
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Users</h2>
+            {pendingDriverCount > 0 ? (
+              <Badge className="rounded-full border-amber-500/40 bg-amber-500/12 text-[11px] font-semibold text-amber-950 dark:text-amber-50">
+                {pendingDriverCount} pending driver{pendingDriverCount === 1 ? "" : "s"}
+              </Badge>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pending driver profiles sort first. Vehicle block + alias help you decide without opening
+            another tool.
+          </p>
         </div>
         {users.isPending ? (
           <SectionSkeleton label="users" />

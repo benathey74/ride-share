@@ -38,6 +38,12 @@ function pathnameMatchesDriveSlot(pathname: string): boolean {
   return false;
 }
 
+function pathnameMatchesRiderTripSlot(pathname: string): boolean {
+  if (pathname === "/trips" || pathname.startsWith("/trips/")) return true;
+  if (pathname.startsWith("/rides/")) return true;
+  return false;
+}
+
 export function BottomNav({ items, className }: BottomNavProps) {
   const pathname = usePathname() ?? "";
 
@@ -50,12 +56,24 @@ export function BottomNav({ items, className }: BottomNavProps) {
       aria-label="Primary"
     >
       <ul className="mx-auto flex w-full max-w-full items-stretch justify-around px-2">
-        {items.map(({ id, href, label, icon, badge, onBeforeNavigate, driveSlot }) => {
+        {items.map(
+          ({
+            id,
+            href,
+            label,
+            icon,
+            badge,
+            onBeforeNavigate,
+            driveSlot,
+            riderTripSlot,
+          }) => {
           const Icon = ICONS[icon];
           const active = driveSlot
             ? pathnameMatchesDriveSlot(pathname)
-            : pathname === href || pathname.startsWith(`${href}/`);
-          return (
+            : riderTripSlot
+              ? pathnameMatchesRiderTripSlot(pathname)
+              : pathname === href || pathname.startsWith(`${href}/`);
+            return (
             <li key={id ?? href} className="flex-1">
               <Link
                 href={href}

@@ -6,8 +6,7 @@ import {
 } from "@/lib/api/errors";
 import { getApiBaseUrl } from "@/lib/api/client";
 import { resolveActiveUserId } from "@/lib/auth/active-user-id";
-
-const isDev = process.env.NODE_ENV === "development";
+import { readDevHintsEnabled } from "@/lib/dev/dev-hints";
 
 type ApiErrorHintProps = {
   error: unknown;
@@ -17,7 +16,7 @@ type ApiErrorHintProps = {
  * Development-only: env + failure phase next to API error UIs.
  */
 export function ApiErrorDevHint({ error }: ApiErrorHintProps) {
-  if (!isDev) return null;
+  if (!readDevHintsEnabled()) return null;
 
   const phase = getApiFailurePhase(error);
   const phaseLabel =

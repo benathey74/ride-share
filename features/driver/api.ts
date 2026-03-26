@@ -32,7 +32,7 @@ const QUICK_ACTIONS: DriverQuickAction[] = [
   },
   {
     id: "route",
-    label: "Route",
+    label: "My routes",
     toneClass: "bg-accent/15 text-amber-900",
   },
   {
@@ -63,9 +63,18 @@ function mapTodayTripRow(
 }
 
 export function mapDriverDashboard(api: DriverDashboardResponse): DriverDashboardData {
-  const { summary, todaysTrips, pendingRequests } = api;
+  const { summary, todaysTrips, pendingRequests, corridorInterests: corridorInterestsRaw } = api;
   const next = todaysTrips[0];
   const pendingCount = pendingRequests.length;
+  const corridorInterests = (corridorInterestsRaw ?? []).map((row, i) => ({
+    id: String(row.id ?? `interest-${i}`),
+    routeTemplateId: String(row.routeTemplateId ?? ""),
+    corridorLabel: String(row.corridorLabel ?? "Corridor"),
+    riderLabel: String(row.rider?.alias ?? "Rider"),
+    messagePreview:
+      row.message != null && String(row.message).trim() ? String(row.message).trim() : null,
+    updatedAt: String(row.updatedAt ?? ""),
+  }));
 
   const bodyParts = [
     `${summary.tripsToday} trip${summary.tripsToday === 1 ? "" : "s"} today`,
@@ -76,6 +85,11 @@ export function mapDriverDashboard(api: DriverDashboardResponse): DriverDashboar
   ];
   if (pendingCount > 0) {
     bodyParts.push(`${pendingCount} pending request${pendingCount === 1 ? "" : "s"}`);
+  }
+  if (corridorInterests.length > 0) {
+    bodyParts.push(
+      `${corridorInterests.length} corridor interest${corridorInterests.length === 1 ? "" : "s"}`,
+    );
   }
 
   let nextTripPreviewLabel = "No trips scheduled today";
@@ -112,6 +126,7 @@ export function mapDriverDashboard(api: DriverDashboardResponse): DriverDashboar
     quickActions: QUICK_ACTIONS,
     todaysTrips: todaysTrips.map(mapTodayTripRow),
     pendingSeatRequests,
+    corridorInterests,
   };
 }
 

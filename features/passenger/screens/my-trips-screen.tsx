@@ -20,8 +20,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { publicAliasLabel } from "@/lib/utils/privacy";
 import type { PassengerMyTripRow } from "@/types/trip";
 import { passengerMyTripRowPresentation } from "@/features/shared/lib/status-presentation";
-
-const isDev = process.env.NODE_ENV === "development";
+import { readDevHintsEnabled } from "@/lib/dev/dev-hints";
 
 function MyTripsSkeleton() {
   return (
@@ -80,8 +79,8 @@ function MyTripRowCard({ row }: { row: PassengerMyTripRow }) {
           variant="outline"
           className="h-11 w-full justify-between rounded-2xl px-4"
         >
-          <Link href={ROUTES.passengerTripDetail(row.tripInstanceId)}>
-            Trip details
+          <Link href={ROUTES.passengerPrivateTripDetail(row.tripInstanceId)}>
+            Open trip
             <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
           </Link>
         </Button>
@@ -159,10 +158,10 @@ export function PassengerMyTripsScreen() {
     <div className="space-y-8 pb-2 md:space-y-10">
       <SectionHeader
         title="My trips"
-        description="Track seat requests and upcoming rides. Pickup stays approximate until a driver accepts you."
+        description="Pending = waiting on the driver. Upcoming = your seat is confirmed. Pickup stays approximate until the trip has a confirmed pickup point."
       />
 
-      {isDev ? (
+      {readDevHintsEnabled() ? (
         <div className="rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2 font-mono text-[10px] leading-relaxed text-amber-950 dark:text-amber-100">
           <p className="font-semibold text-amber-800 dark:text-amber-200">Dev</p>
           <p className="text-muted-foreground">
@@ -176,15 +175,15 @@ export function PassengerMyTripsScreen() {
       {allEmpty ? (
         <Card className="rounded-3xl border-primary/15">
           <CardHeader>
-            <CardTitle className="text-base">Nothing here yet</CardTitle>
+            <CardTitle className="text-base">No trips yet</CardTitle>
             <CardDescription>
-              When you request a seat or join a trip, it will show up in the sections below. Your
-              home screen highlights the next relevant trip when one exists.
+              Request a seat from Find a ride — it will appear under Pending or Upcoming. Home also
+              surfaces your next active trip when you have one.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button asChild className="rounded-2xl">
-              <Link href={ROUTES.passengerSearch}>Search routes</Link>
+              <Link href={ROUTES.passengerSearch}>Find a ride</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-2xl">
               <Link href={ROUTES.home}>Home</Link>
@@ -194,27 +193,27 @@ export function PassengerMyTripsScreen() {
       ) : null}
 
       <SectionBlock
-        title="Pending requests"
-        description="Waiting for the driver to accept or decline your seat request."
+        title="Pending"
+        description="You asked for a seat — the driver hasn’t decided yet."
         rows={data.pendingRequests}
-        emptyTitle="No pending requests"
-        emptyDescription="Send a seat request from Search to see it here."
+        emptyTitle="Nothing pending"
+        emptyDescription="Find a ride and tap Request a seat — it will show up here while you wait."
       />
 
       <SectionBlock
-        title="Upcoming trips"
-        description="Accepted seats and trips in progress — open for details and pickup."
+        title="Upcoming"
+        description="Seat confirmed or trip underway — open for map and pickup."
         rows={data.upcomingTrips}
         emptyTitle="No upcoming trips"
-        emptyDescription="After a driver accepts, your trip appears here with pickup details."
+        emptyDescription="When a driver accepts you, the trip moves here with pickup and map."
       />
 
       <SectionBlock
-        title="Past trips"
-        description="Completed runs, cancelled trips, or declined requests."
+        title="Past"
+        description="Completed, cancelled, or declined — for your records."
         rows={data.pastTrips}
-        emptyTitle="No past activity"
-        emptyDescription="Finished or declined trips will appear here."
+        emptyTitle="No past trips"
+        emptyDescription="Finished or declined trips land here."
       />
 
       <PrivacyNotice />

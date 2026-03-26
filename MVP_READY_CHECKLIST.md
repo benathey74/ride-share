@@ -119,7 +119,7 @@ Other seeded accounts (same command / `--seed`):
 | Step | Actor | Where | Success criteria |
 |------|--------|-------|------------------|
 | 1 | Driver (**host@rides.local**) | `/routes/new` | Create template (Maps key); trip instance exists for today when schedule matches (see seed). |
-| 2 | Rider (**rider-a** / **rider-b**) | `/search` | Search with real Places picks; see cards; **Request seat** when `nextTripInstanceId` present. |
+| 2 | Rider (**rider-a** / **rider-b**) | `/search` | Search with real Places picks; if bookable use **Request seat**; if not bookable use **Send note to driver** (persists after refresh). |
 | 3 | Driver (**host@rides.local**) | `/dashboard` → trip requests | Pending queue; **Accept** or **Decline**; toast; list updates. |
 | 4 | Rider | `/trips`, `/trips/{id}` | After accept/decline, lists and trip detail refresh (cache invalidation + refocus). |
 
@@ -134,6 +134,7 @@ Other seeded accounts (same command / `--seed`):
 - **Internal auth only** — email/password + session cookie; no Google/SSO. With `ALLOW_DEV_IDENTITY_HEADERS` enabled in dev, `X-User-Id` is still a dev escape hatch (disabled in production by default).
 - **Google Maps** — without `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, place autocomplete and some maps are degraded or blocked; document keys for testers.
 - **Driver approval** — new drivers cannot publish/manage approved-driver routes until an admin approves (by design).
+- **Non-bookable corridor matches** use one-way interest notes (driver dashboard visibility), not pre-booking chat.
 - **Skip onboarding** — does not create public profile; complete **Profile** in-app before expecting full social/trust UX.
 - **Timezones** — backend uses UTC (`TZ=UTC` in backend `.env.example`); trip “today” is UTC-relative unless you align seed/data.
 - **Single-region demo** — seeded corridors are Metro Manila–oriented; search must use nearby Places for matches.

@@ -48,6 +48,12 @@ const routes = {
     tokens: [{"old":"/api/v1/passenger/routes/suggestions","type":0,"val":"api","end":""},{"old":"/api/v1/passenger/routes/suggestions","type":0,"val":"v1","end":""},{"old":"/api/v1/passenger/routes/suggestions","type":0,"val":"passenger","end":""},{"old":"/api/v1/passenger/routes/suggestions","type":0,"val":"routes","end":""},{"old":"/api/v1/passenger/routes/suggestions","type":0,"val":"suggestions","end":""}],
     types: placeholder as Registry['passenger_route_suggestions.index']['types'],
   },
+  'passenger_trips.browse': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/passenger/public-trips/:id',
+    tokens: [{"old":"/api/v1/passenger/public-trips/:id","type":0,"val":"api","end":""},{"old":"/api/v1/passenger/public-trips/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/passenger/public-trips/:id","type":0,"val":"passenger","end":""},{"old":"/api/v1/passenger/public-trips/:id","type":0,"val":"public-trips","end":""},{"old":"/api/v1/passenger/public-trips/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['passenger_trips.browse']['types'],
+  },
   'passenger_trips.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/passenger/trips/:id',
@@ -59,6 +65,12 @@ const routes = {
     pattern: '/api/v1/passenger/trip-requests',
     tokens: [{"old":"/api/v1/passenger/trip-requests","type":0,"val":"api","end":""},{"old":"/api/v1/passenger/trip-requests","type":0,"val":"v1","end":""},{"old":"/api/v1/passenger/trip-requests","type":0,"val":"passenger","end":""},{"old":"/api/v1/passenger/trip-requests","type":0,"val":"trip-requests","end":""}],
     types: placeholder as Registry['trip_requests.store']['types'],
+  },
+  'passenger_corridor_interests.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest',
+    tokens: [{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":0,"val":"api","end":""},{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":0,"val":"v1","end":""},{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":0,"val":"passenger","end":""},{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":0,"val":"route-templates","end":""},{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":1,"val":"routeTemplateId","end":""},{"old":"/api/v1/passenger/route-templates/:routeTemplateId/corridor-interest","type":0,"val":"corridor-interest","end":""}],
+    types: placeholder as Registry['passenger_corridor_interests.store']['types'],
   },
   'driver_dashboard.index': {
     methods: ["GET","HEAD"],

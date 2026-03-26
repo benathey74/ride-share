@@ -25,24 +25,24 @@ export function tripRequestStatusPresentation(
         ? {
             label: "Needs your response",
             tone: "accent",
-            helper: "Accept or decline this seat request.",
+            helper: "Accept to share exact pickup tools for this trip, or decline so they can look elsewhere.",
           }
         : {
             label: "Waiting for driver",
             tone: "secondary",
-            helper: "The driver will accept or decline your seat request.",
+            helper: "Your seat isn’t confirmed yet. The host will accept or decline — check back here or on My trips.",
           };
     case "accepted":
       return role === "driver"
         ? {
-            label: "Accepted",
+            label: "Seat confirmed",
             tone: "default",
-            helper: "This rider has a seat. Their details stay visible for this trip.",
+            helper: "They’re on this run. Add or confirm their pickup pin when you’re ready — they’ll see it on their trip screen.",
           }
         : {
-            label: "Accepted",
+            label: "Seat confirmed",
             tone: "default",
-            helper: "You have a seat on this trip. Exact pickup shows below when the driver shares it.",
+            helper: "You’re on this trip. Exact pickup appears below once your driver saves coordinates.",
           };
     case "declined":
       return role === "driver"
@@ -236,7 +236,7 @@ export function passengerHomeStatusLabelPresentation(raw: string): StatusPresent
     return tripRequestStatusPresentation("pending");
   }
   if (key === "seat confirmed" || key === "accepted") {
-    return tripRequestStatusPresentation("accepted");
+    return tripRequestStatusPresentation("accepted", "passenger");
   }
   if (key === "declined") {
     return tripRequestStatusPresentation("declined");
@@ -275,21 +275,21 @@ export function driverDashboardStatusPresentation(
   switch (slot) {
     case "pending_requests":
       return {
-        label: "Action needed",
+        label: "Riders waiting",
         tone: "accent",
-        helper: "You have seat requests waiting — open a trip to accept or decline.",
+        helper: "Open a trip below and accept or decline each seat request before departure.",
       };
     case "trips_today":
       return {
-        label: "Scheduled",
+        label: "Trips today",
         tone: "default",
-        helper: "You have trips today. Open the queue before departure when riders request seats.",
+        helper: "Check each run’s seat queue before you leave — new requests can arrive anytime.",
       };
     case "clear":
       return {
-        label: "All set",
+        label: "All caught up",
         tone: "secondary",
-        helper: "No pending rider requests right now.",
+        helper: "No riders waiting on a decision right now.",
       };
   }
 }

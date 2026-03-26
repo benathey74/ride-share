@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { PlaceAutocompleteField } from "@/components/location/place-autocomplete-field";
 import { SectionHeader } from "@/components/layout/section-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CorridorMapPreview } from "@/components/maps/corridor-map-preview";
+import { PassengerRouteCorridorCard } from "@/features/passenger/components/passenger-route-corridor-card";
 import { ApiErrorDevHint } from "@/components/dev/api-error-hint";
 import {
   passengerRouteSearchParamsFromForm,
@@ -25,6 +25,7 @@ import {
 } from "@/features/passenger/api";
 import {
   useCreatePassengerTripRequestMutation,
+  useExpressCorridorInterestMutation,
   usePassengerRouteSuggestionsQuery,
 } from "@/features/passenger/hooks";
 import {
@@ -38,13 +39,7 @@ import { PrivacyNotice } from "@/features/shared/components/privacy-notice";
 import { useAppToast } from "@/features/shared/components/toast-provider";
 import { describeApiFailure } from "@/lib/api/errors";
 import { ROUTES } from "@/lib/constants/routes";
-import { parseLatLng } from "@/lib/maps/parse-lat-lng";
-import {
-  formatApproximatePickup,
-  publicAliasLabel,
-} from "@/lib/utils/privacy";
-import { TRIP_MAP_MARKER, TRIP_PICKUP_LABEL } from "@/features/shared/lib/trip-map-copy";
-import { ROUTE_MATCH_HINT_LABELS, type RouteSuggestion } from "@/types/route";
+import type { RouteSuggestion } from "@/types/route";
 
 function placeFieldError(
   errors: Partial<Record<keyof PassengerSearchRoutesFormValues, { message?: string }>>,
@@ -71,118 +66,167 @@ function RouteCard({
   route,
   message,
   onMessageChange,
-  onRequest,
-  isSubmitting,
-  lastSucceededId,
+  onRequestSeat,
+  seatSubmitting,
+  lastSeatOkTemplateId,
+  onNotifyInterest,
+  interestSubmitting,
+  lastInterestOkTemplateId,
+  sentRecently,
+  highlight,
 }: {
   route: RouteSuggestion;
   message: string;
   onMessageChange: (v: string) => void;
-  onRequest: () => void;
-  isSubmitting: boolean;
-  lastSucceededId: string | null;
+  onRequestSeat: () => void;
+  seatSubmitting: boolean;
+  lastSeatOkTemplateId: string | null;
+  onNotifyInterest: () => void;
+  interestSubmitting: boolean;
+  lastInterestOkTemplateId: string | null;
+  sentRecently: boolean;
+  highlight?: boolean;
 }) {
-  const canRequest = Boolean(route.nextTripInstanceId);
-  const pickupLine = formatApproximatePickup(
-    route.pickupAreaLabel,
-    route.pickupFuzzRadiusM,
-  );
-
-  const originLL = parseLatLng(route.approxPickupLat, route.approxPickupLng);
-  const destLL = parseLatLng(route.destinationLat, route.destinationLng);
+  const isBookable = Boolean(route.nextTripInstanceId);
+  const statusBadge = isBookable
+    ? { text: "Available ride", tone: "available" as const }
+    : { text: "No rides available right now", tone: "unavailable" as const };
+  const existingInterest = !isBookable ? route.corridorInterest ?? null : null;
+  const hasExistingInterest = Boolean(existingInterest?.hasContacted);
+  const interestUpdatedAtLabel =
+    existingInterest?.updatedAt && !Number.isNaN(Date.parse(existingInterest.updatedAt))
+      ? new Date(existingInterest.updatedAt).toLocaleString(undefined, {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : null;
 
   return (
-    <Card className="rounded-3xl border-border/90">
-      <CardHeader>
-        <CardTitle className="text-base">{route.name}</CardTitle>
-        <CardDescription>
-          <span className="inline-flex flex-wrap items-center gap-2">
-            {route.host ? (
-              <Badge variant="secondary">{publicAliasLabel(route.host)}</Badge>
-            ) : (
-              <Badge variant="outline">Host</Badge>
-            )}
-            <span className="text-muted-foreground">{route.departureWindowLabel}</span>
-          </span>
-        </CardDescription>
-        {route.matchHints && route.matchHints.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {route.matchHints.map((h) => (
-              <Badge
-                key={h}
-                variant="outline"
-                className="rounded-lg border-primary/25 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-medium leading-tight text-foreground"
-              >
-                {ROUTE_MATCH_HINT_LABELS[h]}
-              </Badge>
-            ))}
-          </div>
+    <PassengerRouteCorridorCard
+      route={route}
+      showMatchHints
+      mapPointerEvents={isBookable ? "auto" : "none"}
+      cardId={`passenger-route-card-${route.routeTemplateId}`}
+      highlight={highlight}
+      statusBadge={statusBadge}
+    >
+      <div className="relative z-10 space-y-3 border-t border-border/60 pt-3">
+        {isBookable && route.nextTripInstanceId ? (
+          <Button asChild variant="outline" className="h-11 w-full rounded-2xl font-semibold">
+            <Link href={ROUTES.passengerPublicRide(route.nextTripInstanceId)}>View ride</Link>
+          </Button>
         ) : null}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {originLL && destLL ? (
-          <CorridorMapPreview
-            variant="compact"
-            origin={originLL}
-            destination={destLL}
-            encodedPolyline={route.routePolyline ?? null}
-            straightLineFallback={false}
-            approximatePickup={{
-              center: originLL,
-              radiusMeters: route.pickupFuzzRadiusM,
-            }}
-            originTitle={TRIP_MAP_MARKER.routeStart}
-            destinationTitle={TRIP_MAP_MARKER.destination}
-          />
-        ) : null}
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {TRIP_PICKUP_LABEL.approxEyebrow}
-          </p>
-          <p className="text-sm font-medium text-foreground">{pickupLine}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`msg-${route.routeTemplateId}`}>Message to driver (optional)</Label>
-          <Input
-            id={`msg-${route.routeTemplateId}`}
-            className="rounded-2xl"
-            value={message}
-            onChange={(e) => onMessageChange(e.target.value)}
-            placeholder="e.g. I can meet at the lobby"
-            maxLength={2000}
-            disabled={!canRequest || isSubmitting}
-          />
-        </div>
-        {!canRequest ? (
-          <p className="text-xs text-muted-foreground">
-            No open trip instance for this route right now. Check back after the host schedules
-            one.
-          </p>
-        ) : null}
-        {lastSucceededId === route.routeTemplateId ? (
-          <div className="space-y-2" role="status">
-            <p className="text-xs font-medium text-primary">
-              Request sent — the driver will see your seat request soon.
-            </p>
-            {route.nextTripInstanceId ? (
-              <Button asChild variant="outline" size="sm" className="w-full rounded-xl">
-                <Link href={ROUTES.passengerTripDetail(route.nextTripInstanceId)}>
-                  View trip details
-                </Link>
-              </Button>
+
+        {isBookable ? (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor={`msg-${route.routeTemplateId}`}>Note to the driver (optional)</Label>
+              <Input
+                id={`msg-${route.routeTemplateId}`}
+                className="rounded-2xl"
+                value={message}
+                onChange={(e) => onMessageChange(e.target.value)}
+                placeholder="e.g. I can meet at the lobby"
+                maxLength={2000}
+                disabled={seatSubmitting}
+              />
+            </div>
+            {lastSeatOkTemplateId === route.routeTemplateId ? (
+              <div className="space-y-2" role="status">
+                <p className="text-xs font-medium text-primary">
+                  Request sent — you’ll see <strong>Waiting for driver</strong> on the trip until they
+                  respond.
+                </p>
+                {route.nextTripInstanceId ? (
+                  <Button asChild variant="secondary" size="sm" className="w-full rounded-xl">
+                    <Link href={ROUTES.passengerPrivateTripDetail(route.nextTripInstanceId)}>
+                      Open trip
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
-          </div>
-        ) : null}
-        <Button
-          type="button"
-          className="w-full rounded-2xl"
-          disabled={!canRequest || isSubmitting}
-          onClick={onRequest}
-        >
-          {isSubmitting ? "Sending request…" : "Request seat"}
-        </Button>
-      </CardContent>
-    </Card>
+            <Button
+              type="button"
+              className="h-12 w-full rounded-2xl text-base font-semibold"
+              disabled={seatSubmitting}
+              onClick={onRequestSeat}
+            >
+              {seatSubmitting ? "Sending…" : "Request a seat"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="space-y-1.5 rounded-2xl border border-border/70 bg-muted/20 px-3 py-2.5">
+              <p className="text-sm font-semibold text-foreground">
+                No rides available for this route yet
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {hasExistingInterest
+                  ? "You’ve already notified the driver. Edit your note any time if your plans changed."
+                  : "This route matches your pickup and destination, but there’s no ride you can book yet. Add an optional note and notify the driver."}
+              </p>
+            </div>
+            {hasExistingInterest ? (
+              <div className="rounded-2xl border border-border/70 bg-muted/30 px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  You’ve contacted the driver
+                </p>
+                {existingInterest?.message ? (
+                  <p className="mt-1 text-xs text-foreground">“{existingInterest.message}”</p>
+                ) : null}
+                {interestUpdatedAtLabel ? (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Last updated {interestUpdatedAtLabel}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor={`interest-${route.routeTemplateId}`}>
+                Note to the driver (optional)
+              </Label>
+              <Input
+                id={`interest-${route.routeTemplateId}`}
+                className="rounded-2xl"
+                value={message}
+                onChange={(e) => onMessageChange(e.target.value)}
+                placeholder="e.g. I commute this way most Tuesdays"
+                maxLength={2000}
+                disabled={interestSubmitting || sentRecently}
+              />
+            </div>
+            <Button
+              type="button"
+              className="h-12 w-full rounded-2xl text-base font-semibold"
+              disabled={interestSubmitting || sentRecently}
+              onClick={onNotifyInterest}
+            >
+              {interestSubmitting
+                ? "Sending…"
+                : sentRecently
+                  ? "Sent to driver"
+                  : hasExistingInterest
+                    ? "Update your interest"
+                    : "Notify driver you're interested"}
+            </Button>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {hasExistingInterest ? "Update your note anytime." : "We’ll let the driver know you want this trip."}{" "}
+              After they schedule a run with seats, use{" "}
+              <span className="font-medium text-foreground">View ride</span> and{" "}
+              <span className="font-medium text-foreground">Request a seat</span> on this card.
+            </p>
+            {lastInterestOkTemplateId === route.routeTemplateId ? (
+              <p className="text-xs font-medium text-primary" role="status">
+                Sent to driver. You can edit and resend in a moment.
+              </p>
+            ) : null}
+          </>
+        )}
+      </div>
+    </PassengerRouteCorridorCard>
   );
 }
 
@@ -206,10 +250,15 @@ export function SearchResultsScreen() {
   } = form;
 
   const mutation = useCreatePassengerTripRequestMutation();
+  const interestMutation = useExpressCorridorInterestMutation();
   const toast = useAppToast();
   const [messages, setMessages] = useState<Record<string, string>>({});
-  const [lastOkTemplate, setLastOkTemplate] = useState<string | null>(null);
+  const [lastSeatOkTemplate, setLastSeatOkTemplate] = useState<string | null>(null);
+  const [lastInterestOkTemplate, setLastInterestOkTemplate] = useState<string | null>(null);
   const [submittingRouteId, setSubmittingRouteId] = useState<string | null>(null);
+  const [submittingInterestRouteId, setSubmittingInterestRouteId] = useState<string | null>(null);
+  const [recentlySentInterestByTemplate, setRecentlySentInterestByTemplate] =
+    useState<Record<string, boolean>>({});
 
   const onSubmit = handleSubmit((values) => {
     setCommittedSearch(passengerRouteSearchParamsFromForm(values));
@@ -234,19 +283,54 @@ export function SearchResultsScreen() {
   const resultsError = showResults && isError;
   const resultsReady = showResults && !isError && !isPending;
 
+  const searchParams = useSearchParams();
+  const focusTemplateId = searchParams.get("routeTemplateId")?.trim() || null;
+  const focusRouteName = searchParams.get("routeName")?.trim() || null;
+  const corridorFocusLabel = focusRouteName || "this corridor";
+  const focusInResults =
+    Boolean(focusTemplateId) && routes.some((r) => r.routeTemplateId === focusTemplateId);
+  const scrollSignatureRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!resultsReady || !focusTemplateId || !committedSearch) return;
+    const inList = routes.some((r) => r.routeTemplateId === focusTemplateId);
+    if (!inList) return;
+    const sig = `${focusTemplateId}:${committedSearch.pickupLat}:${committedSearch.pickupLng}:${committedSearch.destinationLat}:${committedSearch.destinationLng}`;
+    if (scrollSignatureRef.current === sig) return;
+    scrollSignatureRef.current = sig;
+    const el = document.getElementById(`passenger-route-card-${focusTemplateId}`);
+    requestAnimationFrame(() => {
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [resultsReady, focusTemplateId, routes, committedSearch]);
+
   return (
     <FormProvider {...form}>
       <div className="space-y-6 pb-2 md:space-y-7">
         <SectionHeader
-          title="Search routes"
-          description="Choose real pickup and destination places. Results match driver corridors near those points (privacy-safe cards below)."
+          title="Find a ride"
+          description="Pick real places from the list. We match driver corridors to your pickup and destination without exposing exact addresses until you’re accepted."
         />
+
+        {focusTemplateId && !showResults ? (
+          <Card className="rounded-3xl border-primary/25 bg-primary/[0.05]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Continue with a corridor</CardTitle>
+              <CardDescription className="text-left">
+                You opened search for <span className="font-medium text-foreground">{corridorFocusLabel}</span>.
+                Enter pickup and destination above, then tap{" "}
+                <span className="font-medium text-foreground">Show matching routes</span> — we’ll
+                scroll to that card when it appears in your results.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null}
 
         <Card className="rounded-3xl border-border/90">
           <CardHeader>
-            <CardTitle className="text-base">Where are you going?</CardTitle>
+            <CardTitle className="text-base">Your trip</CardTitle>
             <CardDescription>
-              Use the suggestions list — typed text alone is not enough to search.
+              Choose each stop from Google’s suggestions — free typing alone won’t run a search.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -255,8 +339,8 @@ export function SearchResultsScreen() {
                 control={control}
                 fields={PASSENGER_SEARCH_PICKUP_FIELDS}
                 htmlId="passenger-search-pickup"
-                label="Pickup"
-                placeholder="Search pickup location"
+                label="Pickup (where you’ll get in)"
+                placeholder="Search pickup"
                 disabled={resultsLoading}
                 helperText={pickupErr}
                 helperVariant="destructive"
@@ -265,7 +349,7 @@ export function SearchResultsScreen() {
                 control={control}
                 fields={PASSENGER_SEARCH_DEST_FIELDS}
                 htmlId="passenger-search-destination"
-                label="Destination"
+                label="Destination (where you’re headed)"
                 placeholder="Search destination"
                 disabled={resultsLoading}
                 helperText={destErr}
@@ -276,7 +360,7 @@ export function SearchResultsScreen() {
                 className="w-full rounded-2xl sm:w-auto sm:min-w-[140px]"
                 disabled={resultsLoading}
               >
-                {resultsLoading ? "Searching…" : "Search routes"}
+                {resultsLoading ? "Searching…" : "Show matching routes"}
               </Button>
             </form>
           </CardContent>
@@ -285,11 +369,10 @@ export function SearchResultsScreen() {
         {!showResults ? (
           <Card className="rounded-3xl border-dashed border-border/80 bg-muted/20">
             <CardHeader>
-              <CardTitle className="text-base">No search yet</CardTitle>
+              <CardTitle className="text-base">Start with two places</CardTitle>
               <CardDescription>
-                Select pickup and destination from Google Places, then tap{" "}
-                <span className="font-medium text-foreground">Search routes</span> to see matching
-                corridors.
+                Pick pickup and destination from the lists, then tap{" "}
+                <span className="font-medium text-foreground">Show matching routes</span>.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -321,12 +404,39 @@ export function SearchResultsScreen() {
         {resultsLoading ? <SearchResultsSkeleton /> : null}
 
         {resultsReady && routes.length === 0 ? (
-          <Card className="rounded-3xl">
+          <Card className="rounded-3xl border-dashed border-border/80">
             <CardHeader>
-              <CardTitle className="text-base">No matching routes</CardTitle>
-              <CardDescription>
-                No active driver corridor is close enough to both your pickup and destination. Try
-                nearby places or check back when hosts add routes along this corridor.
+              <CardTitle className="text-base">No corridors match this trip</CardTitle>
+              <CardDescription className="space-y-2 text-left">
+                <p>
+                  No approved driver route is close enough to <strong>both</strong> your pickup and
+                  destination right now.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Try nearby cross streets, a park-and-ride, or a broader destination. New routes
+                  appear as drivers publish them.
+                </p>
+                {focusTemplateId ? (
+                  <p className="text-xs text-muted-foreground">
+                    The corridor you picked from home ({corridorFocusLabel}) doesn’t fit these places
+                    — adjust pickup or destination and search again.
+                  </p>
+                ) : null}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null}
+
+        {resultsReady && focusTemplateId && routes.length > 0 && !focusInResults ? (
+          <Card className="rounded-3xl border-amber-500/30 bg-amber-500/[0.06]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base text-amber-950 dark:text-amber-50">
+                Corridor not in this list
+              </CardTitle>
+              <CardDescription className="text-left text-amber-950/90 dark:text-amber-100/90">
+                <span className="font-medium text-foreground">{corridorFocusLabel}</span> didn’t
+                match your pickup and destination. Try nearby stops or another time — ranked cards
+                below are still valid options.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -335,21 +445,26 @@ export function SearchResultsScreen() {
         {resultsReady && routes.length > 0 ? (
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">
-              Showing {routes.length} corridor{routes.length === 1 ? "" : "s"} for your search.
+              {routes.length} corridor{routes.length === 1 ? "" : "s"} ranked for your pickup and
+              destination. When a run is open: <span className="font-medium text-foreground">View ride</span>{" "}
+              and <span className="font-medium text-foreground">Request a seat</span>. When there’s no
+              bookable run yet: <span className="font-medium text-foreground">Notify driver you're interested</span> on
+              each card.
             </p>
             {routes.map((route) => (
               <RouteCard
                 key={route.routeTemplateId}
                 route={route}
+                highlight={Boolean(focusTemplateId && route.routeTemplateId === focusTemplateId)}
                 message={messages[route.routeTemplateId] ?? ""}
                 onMessageChange={(v) =>
                   setMessages((m) => ({ ...m, [route.routeTemplateId]: v }))
                 }
-                isSubmitting={
+                seatSubmitting={
                   mutation.isPending && submittingRouteId === route.routeTemplateId
                 }
-                lastSucceededId={lastOkTemplate}
-                onRequest={() => {
+                lastSeatOkTemplateId={lastSeatOkTemplate}
+                onRequestSeat={() => {
                   if (!route.nextTripInstanceId) return;
                   const tid = Number(route.nextTripInstanceId);
                   if (!Number.isFinite(tid)) return;
@@ -365,10 +480,10 @@ export function SearchResultsScreen() {
                     },
                     {
                       onSuccess: () => {
-                        setLastOkTemplate(route.routeTemplateId);
+                        setLastSeatOkTemplate(route.routeTemplateId);
                         toast({
                           message:
-                            "Seat request sent. The host will see your approximate pickup and message.",
+                            "Seat request sent. The driver sees your approximate pickup and note — wait for accept or decline.",
                           variant: "success",
                         });
                       },
@@ -379,6 +494,49 @@ export function SearchResultsScreen() {
                         });
                       },
                       onSettled: () => setSubmittingRouteId(null),
+                    },
+                  );
+                }}
+                interestSubmitting={
+                  interestMutation.isPending &&
+                  submittingInterestRouteId === route.routeTemplateId
+                }
+                lastInterestOkTemplateId={lastInterestOkTemplate}
+                sentRecently={Boolean(recentlySentInterestByTemplate[route.routeTemplateId])}
+                onNotifyInterest={() => {
+                  setSubmittingInterestRouteId(route.routeTemplateId);
+                  interestMutation.mutate(
+                    {
+                      routeTemplateId: route.routeTemplateId,
+                      message: messages[route.routeTemplateId]?.trim() || null,
+                    },
+                    {
+                      onSuccess: (res) => {
+                        setLastInterestOkTemplate(route.routeTemplateId);
+                        setRecentlySentInterestByTemplate((prev) => ({
+                          ...prev,
+                          [route.routeTemplateId]: true,
+                        }));
+                        window.setTimeout(() => {
+                          setRecentlySentInterestByTemplate((prev) => ({
+                            ...prev,
+                            [route.routeTemplateId]: false,
+                          }));
+                        }, 2500);
+                        toast({
+                          message: res.updated
+                            ? "Updated your note for this corridor — the driver will see it on their dashboard."
+                            : "The driver will see your interest on their dashboard.",
+                          variant: "success",
+                        });
+                      },
+                      onError: (err) => {
+                        toast({
+                          message: describeApiFailure(err).title,
+                          variant: "error",
+                        });
+                      },
+                      onSettled: () => setSubmittingInterestRouteId(null),
                     },
                   );
                 }}
@@ -395,6 +553,14 @@ export function SearchResultsScreen() {
               {describeApiFailure(mutation.error).description}
             </p>
             <ApiErrorDevHint error={mutation.error} />
+          </div>
+        ) : null}
+        {interestMutation.isError ? (
+          <div className="space-y-2">
+            <p className="text-center text-xs text-destructive" role="alert">
+              {describeApiFailure(interestMutation.error).description}
+            </p>
+            <ApiErrorDevHint error={interestMutation.error} />
           </div>
         ) : null}
       </div>

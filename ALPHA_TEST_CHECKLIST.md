@@ -84,7 +84,7 @@ Switch persona: **Sign out** (Profile or login page), then sign in as another us
 |------|--------|--------|
 | 1 | `/home` | Hero, nearby route cards, **Next pickup** card with link to trip detail when applicable |
 | 2 | `/search` | Before search: dashed “No search yet”; submit valid Places → loading → results or **No matching routes** |
-| 3 | Results | Map fallback if no key; **Request seat** only when `nextTripInstanceId` present; errors → toast + dev hint |
+| 3 | Results | Map fallback if no key; **Request seat** when `nextTripInstanceId` exists; otherwise **Send note to driver** with persistent “you’ve contacted” state |
 | 4 | `/trips` | My trips lists (or empty states) |
 | 5 | `/trips/{id}` | Trip you’re on: map, pickup copy; exact pin only if accepted |
 
@@ -137,7 +137,8 @@ Use a **fresh user** (new DB row or temporary user) with **`onboarding_completed
 
 - **Internal auth** — email/password + session cookie; optional dev **`X-User-Id`** when env flags allow (`FRONTEND_LOCAL_SETUP.md`, `AUTH_TRANSITION_PLAN.md`).
 - **Admin tab** visible to everyone in the shared shell; only user **1** gets full API access.
-- **In-app chat** not wired; trip detail says to coordinate off-app.
+- **Trip coordination chat** is lightweight text-only and scoped to private trip access (driver + accepted passenger/admin); no realtime sockets/read receipts.
+- **Corridor interest** is dashboard-driven (passenger sends note; driver sees interest card); not a two-way pre-booking chat thread.
 - **Trip request queue** has no map (by design for this alpha).
 - **Timezone:** “Today” for driver trips is **UTC** date — edge cases near midnight UTC.
 - **Workspace vs passenger layout:** `/home` uses passenger shell; **Drive** tab targets **`/home`** when the API URL is missing, otherwise snapshot-driven dashboard / finish gates / **`/home`** for incomplete onboarding. **`/profile`** and **`/onboarding/*`** stay reachable without the passenger gate; **`/admin`** requires API + snapshot + completed onboarding before the admin UI loads (role checks unchanged).

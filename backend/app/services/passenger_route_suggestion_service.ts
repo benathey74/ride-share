@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import { RouteTemplateStatus, TripInstanceStatus, TripRequestStatus } from '#constants/trip'
+import PassengerRouteCorridorInterest from '#models/passenger_route_corridor_interest'
 import RouteTemplate from '#models/route_template'
 import TripInstance from '#models/trip_instance'
 import {
@@ -22,14 +23,16 @@ const privacy = new PrivacyViewService()
 const HOME_COPY = {
   hero: {
     eyebrow: 'Internal rides',
-    titleLine1: 'Find a seat.',
-    titleLine2: 'Stay private.',
-    subtitle: 'Aliases and avatars only. Exact pickup unlocks after a driver accepts.',
+    titleLine1: 'Need a lift?',
+    titleLine2: 'Start here.',
+    subtitle:
+      'Ride as a passenger with privacy-first matching. Driving is separate — publish a route only when you are ready to host.',
   },
-  searchSectionDescription: 'Search routes by corridor — suggestions are privacy-safe.',
-  nextPickupSectionTitle: 'Next pickup',
-  routesSectionDescription: 'Nearby recurring routes from approved drivers.',
-  privacyFootnote: 'Exact pin unlocks after a driver accepts.',
+  searchSectionDescription:
+    'Looking for a ride? Search matches your pickup and destination to driver corridors. Exact pickup stays hidden until you are accepted.',
+  nextPickupSectionTitle: 'Your trip status',
+  routesSectionDescription: 'Corridors published near you — browse below, or search when you know your trip.',
+  privacyFootnote: 'Exact pin unlocks after a driver accepts you.',
 } as const
 
 export default class PassengerRouteSuggestionService {
@@ -38,7 +41,10 @@ export default class PassengerRouteSuggestionService {
    * endpoints are within pickup/destination distance thresholds. When `search` is null,
    * returns every active template (legacy behavior).
    */
-  async listSuggestions(search: PassengerRouteSearchCoords | null = null) {
+  async listSuggestions(
+    search: PassengerRouteSearchCoords | null = null,
+    viewerUserId?: number
+  ) {
     let templates = await RouteTemplate.query()
       .where('status', RouteTemplateStatus.ACTIVE)
       .preload('driver', (q) => q.preload('publicProfile'))
@@ -60,6 +66,26 @@ export default class PassengerRouteSuggestionService {
         }
       }
       templates = kept
+    }
+
+    const corridorInterestByTemplateId = new Map<
+      number,
+      { message: string | null; updatedAt: string }
+    >()
+    if (viewerUserId && templates.length > 0) {
+      const templateIds = templates.map((t) => t.id)
+      const rows = await PassengerRouteCorridorInterest.query()
+        .where('rider_user_id', viewerUserId)
+        .whereIn('route_template_id', templateIds)
+        .orderBy('updated_at', 'desc')
+      for (const row of rows) {
+        if (corridorInterestByTemplateId.has(row.routeTemplateId)) continue
+        const updated = row.updatedAt ?? row.createdAt
+        corridorInterestByTemplateId.set(row.routeTemplateId, {
+          message: row.message,
+          updatedAt: updated.toISO() ?? '',
+        })
+      }
     }
 
     const today = DateTime.utc().startOf('day').toISODate()!
@@ -124,6 +150,13 @@ export default class PassengerRouteSuggestionService {
             isActive: s.isActive,
           })),
           nextTripInstanceId: nextTrip ? String(nextTrip.id) : null,
+          corridorInterest: corridorInterestByTemplateId.has(template.id)
+            ? {
+                hasContacted: true,
+                message: corridorInterestByTemplateId.get(template.id)?.message ?? null,
+                updatedAt: corridorInterestByTemplateId.get(template.id)?.updatedAt ?? '',
+              }
+            : null,
         }
         return { row, score, templateId: template.id }
       })

@@ -17,11 +17,31 @@ export const ROUTES = {
   },
   home: "/home",
   passengerSearch: "/search",
+  /**
+   * Deep-link from home “Your search” — search screen reads `routeTemplateId` + optional
+   * `routeName` to highlight and scroll to the card after results load.
+   */
+  passengerSearchFocusRoute: (routeTemplateId: string, routeName: string) => {
+    const q = new URLSearchParams();
+    q.set("routeTemplateId", routeTemplateId);
+    const trimmed = routeName.trim();
+    if (trimmed) q.set("routeName", trimmed);
+    return `/search?${q.toString()}`;
+  },
   /** Passenger list: requests & trips (derived from home + detail for now) */
   passengerMyTrips: "/trips",
-  /** Passenger trip detail (rider view for a trip instance) */
-  passengerTripDetail: (tripInstanceId: string) =>
+  /**
+   * **Private** booked-trip screen (`/trips/[id]`). Only for riders who already have a seat request
+   * or passenger row — otherwise the API returns 403. Do not use for home/search “browse” flows.
+   */
+  passengerPrivateTripDetail: (tripInstanceId: string) =>
     `/trips/${tripInstanceId}`,
+  /**
+   * **Public** ride overview (`/rides/[id]`). Safe for anyone onboarded; no booking required.
+   * Use for home/search “View ride” and corridor discovery.
+   */
+  passengerPublicRide: (tripInstanceId: string) =>
+    `/rides/${tripInstanceId}`,
   driverDashboard: "/dashboard",
   driverRoutes: "/routes",
   driverRoutesNew: "/routes/new",

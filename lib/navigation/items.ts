@@ -4,7 +4,12 @@ import type { BottomNavItem } from "./types";
 export const passengerNavItems: BottomNavItem[] = [
   { href: ROUTES.home, label: "Home", icon: "home" },
   { href: ROUTES.passengerSearch, label: "Search", icon: "search" },
-  { href: ROUTES.passengerMyTrips, label: "Trips", icon: "trips" },
+  {
+    href: ROUTES.passengerMyTrips,
+    label: "Trips",
+    icon: "trips",
+    riderTripSlot: true,
+  },
   { href: ROUTES.profile, label: "Profile", icon: "profile" },
 ];
 

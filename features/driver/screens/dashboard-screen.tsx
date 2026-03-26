@@ -64,7 +64,7 @@ export function DriverDashboardScreen() {
     );
   }
 
-  const { summary, quickActions, todaysTrips, pendingSeatRequests } = data;
+  const { summary, quickActions, todaysTrips, pendingSeatRequests, corridorInterests } = data;
 
   return (
     <div className="space-y-6 md:space-y-7">
@@ -98,13 +98,15 @@ export function DriverDashboardScreen() {
         </CardContent>
       </Card>
 
-      {pendingSeatRequests.length === 0 && todaysTrips.length === 0 ? (
+      {pendingSeatRequests.length === 0 &&
+      todaysTrips.length === 0 &&
+      corridorInterests.length === 0 ? (
         <Card className="rounded-3xl border-dashed border-border/80 bg-muted/15">
           <CardHeader>
-            <CardTitle className="text-base">No trips or seat requests right now</CardTitle>
+            <CardTitle className="text-base">Quiet dashboard</CardTitle>
             <CardDescription>
-              Scheduled runs for today and pending rider requests show up here first. Publish a
-              corridor if you have not yet, or check back when colleagues request seats.
+              When riders request seats or you have runs today, they appear in the sections below.
+              New driver? Publish a corridor first so passengers can find you.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -118,11 +120,65 @@ export function DriverDashboardScreen() {
         </Card>
       ) : null}
 
+      {corridorInterests.length > 0 ? (
+        <section className="space-y-3">
+          <SectionHeader
+            title="Corridor interest"
+            description="Passengers want this corridor. Review their note, then create a run or adjust your route."
+          />
+          <div className="space-y-2">
+            {corridorInterests.map((row) => {
+              const preview =
+                row.messagePreview && row.messagePreview.length > 140
+                  ? `${row.messagePreview.slice(0, 137)}…`
+                  : row.messagePreview;
+              const when =
+                row.updatedAt && !Number.isNaN(Date.parse(row.updatedAt))
+                  ? new Date(row.updatedAt).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : null;
+              return (
+                <Card key={row.id} className="rounded-3xl border-secondary/20 bg-secondary/[0.04]">
+                  <CardHeader className="space-y-1 pb-2">
+                    <CardTitle className="text-sm font-semibold leading-snug">
+                      {row.corridorLabel}
+                    </CardTitle>
+                    <CardDescription className="space-y-1 text-xs text-foreground/90">
+                      <p><span className="font-medium text-foreground">Passenger:</span> {row.riderLabel}</p>
+                      <p><span className="font-medium text-foreground">Route:</span> {row.corridorLabel}</p>
+                      <p className="text-muted-foreground">
+                        <span className="font-medium text-foreground">Note:</span>{" "}
+                        {preview ? `“${preview}”` : "No note"}
+                      </p>
+                      {when ? (
+                        <p className="text-[11px] text-muted-foreground">Updated {when}</p>
+                      ) : null}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex gap-2 pt-0">
+                    <Button asChild size="sm" className="rounded-xl">
+                      <Link href={ROUTES.driverRoutesNew}>Create trip for this route</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="rounded-xl">
+                      <Link href={ROUTES.driverRoutes}>View routes</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       {pendingSeatRequests.length > 0 ? (
         <section className="space-y-3">
           <SectionHeader
-            title="Pending seat requests"
-            description="Open the trip queue to accept or decline — includes trips not only scheduled for today."
+            title="Needs your answer"
+            description="Each line is a rider waiting on you — open the trip to accept or decline their seat."
           />
           <div className="space-y-2">
             {pendingSeatRequests.map((req) => (
@@ -138,7 +194,7 @@ export function DriverDashboardScreen() {
                       {req.riderLabel} · {req.destinationLabel}
                     </span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      Review request
+                      Tap to accept or decline
                     </span>
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -152,8 +208,8 @@ export function DriverDashboardScreen() {
       {todaysTrips.length > 0 ? (
         <section className="space-y-3">
           <SectionHeader
-            title="Today's trips"
-            description="Open the request queue for each run."
+            title="Today’s runs"
+            description="Open each trip to see the seat queue — even if no one has requested yet."
           />
           <div className="space-y-2">
             {todaysTrips.map((trip) => (

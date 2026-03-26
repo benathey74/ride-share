@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CorridorMapPreview } from "@/components/maps/corridor-map-preview";
+import { PassengerRouteCorridorCard } from "@/features/passenger/components/passenger-route-corridor-card";
 import { ApiErrorDevHint } from "@/components/dev/api-error-hint";
 import { isApiConfigured } from "@/features/onboarding/api";
 import { useOnboardingSnapshotQuery } from "@/features/onboarding/hooks";
@@ -20,20 +20,17 @@ import { PassengerHomeGetStarted } from "@/features/passenger/components/home-ge
 import { usePassengerHomeQuery } from "@/features/passenger/hooks";
 import { PrivacyNotice } from "@/features/shared/components/privacy-notice";
 import { describeApiFailure } from "@/lib/api/errors";
-import {
-  formatApproximatePickup,
-  publicAliasLabel,
-} from "@/lib/utils/privacy";
+import { formatApproximatePickup } from "@/lib/utils/privacy";
 import { ROUTES } from "@/lib/constants/routes";
-import { parseLatLng } from "@/lib/maps/parse-lat-lng";
 import { PassengerDriverAccessNotice } from "@/features/passenger/components/driver-access-notice";
-import { TRIP_MAP_MARKER, TRIP_PICKUP_LABEL } from "@/features/shared/lib/trip-map-copy";
+import { PassengerHomeHeroBanner } from "@/features/passenger/components/passenger-home-hero-banner";
+import { TRIP_PICKUP_LABEL } from "@/features/shared/lib/trip-map-copy";
 import { passengerHomeStatusLabelPresentation } from "@/features/shared/lib/status-presentation";
 
 function HomeScreenSkeleton() {
   return (
     <div className="space-y-6 md:space-y-7" aria-busy="true" aria-label="Loading home">
-      <div className="h-48 animate-pulse rounded-[2rem] bg-muted/60" />
+      <div className="aspect-[1024/682] min-h-[13rem] w-full animate-pulse rounded-[2rem] bg-muted/60 md:min-h-[15rem]" />
       <div className="space-y-3">
         <div className="h-4 w-40 animate-pulse rounded bg-muted/60" />
         <div className="h-36 animate-pulse rounded-3xl bg-muted/50" />
@@ -149,23 +146,27 @@ export function HomeScreen() {
     <div className="space-y-6 md:space-y-7">
       <PassengerDriverAccessNotice />
 
-      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-teal-600 to-secondary p-6 text-primary-foreground shadow-soft-lg">
-        <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
-          {data.hero.eyebrow}
-        </p>
-        <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
-          {data.hero.titleLine1}
-          <br />
-          {data.hero.titleLine2}
-        </h2>
-        <p className="mt-3 max-w-[280px] text-sm leading-relaxed text-white/90">
-          {data.hero.subtitle}
-        </p>
-      </section>
+      <PassengerHomeHeroBanner verticallyCenter>
+        <div className="mt-[20px] flex max-w-md flex-col gap-3">
+          <h2 className="text-balance text-xl font-bold leading-tight tracking-tight text-[#2a3f5c] md:text-2xl">
+            Find a ride,
+            <br />
+            Share the Cost!
+          </h2>
+          <p className="text-[13px] font-medium leading-[1.2] text-[#2a3f5c] [text-shadow:0_0_10px_rgba(255,255,255,0.45)] md:text-sm md:leading-[1.22]">
+            Carpool with your <br />
+            coworkers and save <br />
+            on travel expenses.
+          </p>
+        </div>
+      </PassengerHomeHeroBanner>
 
       <section className="space-y-3">
         <Card className="overflow-hidden rounded-3xl border-primary/25 bg-primary/[0.07] ring-1 ring-primary/15">
           <CardContent className="space-y-3 p-5">
+            <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+              Riding as a passenger
+            </p>
             <Button
               asChild
               size="lg"
@@ -173,23 +174,31 @@ export function HomeScreen() {
             >
               <Link href={ROUTES.passengerSearch}>
                 <Search className="h-6 w-6 shrink-0" aria-hidden />
-                Search for rides
+                Find a ride
               </Link>
             </Button>
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Next: choose pickup and destination — we’ll match corridors from approved drivers.
+              Set pickup and destination — we show corridors from approved drivers that fit your trip.
             </p>
             {snapshot.driver?.approvalStatus === "approved" ? (
-              <Button
-                asChild
-                variant="outline"
-                className="h-11 w-full gap-2 rounded-2xl border-primary/25 bg-background/80"
-              >
-                <Link href={ROUTES.driverRoutesNew}>
-                  <Car className="h-4 w-4 shrink-0" aria-hidden />
-                  Offer a ride — new route
-                </Link>
-              </Button>
+              <>
+                <div className="relative py-1 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground before:absolute before:inset-x-8 before:top-1/2 before:h-px before:bg-border before:content-['']">
+                  <span className="relative bg-primary/[0.07] px-2">or hosting</span>
+                </div>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-11 w-full gap-2 rounded-2xl border-primary/25 bg-background/80"
+                >
+                  <Link href={ROUTES.driverRoutesNew}>
+                    <Car className="h-4 w-4 shrink-0" aria-hidden />
+                    Publish a new route
+                  </Link>
+                </Button>
+                <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                  For drivers: define a corridor and schedule so passengers can request seats.
+                </p>
+              </>
             ) : null}
           </CardContent>
         </Card>
@@ -223,8 +232,8 @@ export function HomeScreen() {
             </div>
             {data.nextPickup.tripInstanceId ? (
               <Button asChild variant="secondary" className="w-full rounded-2xl">
-                <Link href={ROUTES.passengerTripDetail(data.nextPickup.tripInstanceId)}>
-                  View trip details
+                <Link href={ROUTES.passengerPrivateTripDetail(data.nextPickup.tripInstanceId)}>
+                  Open trip
                 </Link>
               </Button>
             ) : null}
@@ -240,57 +249,44 @@ export function HomeScreen() {
         {data.nearbyRoutes.length === 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">No routes nearby yet</CardTitle>
+              <CardTitle className="text-base">No routes listed nearby</CardTitle>
               <CardDescription>
-                When approved drivers publish corridors in your area, they will appear here. Use{" "}
-                <strong>Search for rides</strong> above to find routes by place.
+                This list is a quick browse only. To match your exact pickup and destination, use{" "}
+                <strong>Find a ride</strong> — search always gives the best fit.
               </CardDescription>
             </CardHeader>
           </Card>
         ) : (
-          data.nearbyRoutes.map((route) => {
-            const o = parseLatLng(route.approxPickupLat, route.approxPickupLng);
-            const d = parseLatLng(route.destinationLat, route.destinationLng);
-            return (
-              <Card
-                key={route.routeTemplateId}
-                className="overflow-hidden rounded-3xl border-border/90"
-              >
-                <CardHeader>
-                  <CardTitle className="text-base">{route.name}</CardTitle>
-                  <CardDescription>
-                    <span className="inline-flex items-center gap-2">
-                      {route.host ? (
-                        <Badge variant="secondary">{publicAliasLabel(route.host)}</Badge>
-                      ) : (
-                        <Badge variant="outline">Host TBD</Badge>
-                      )}
-                      <span className="text-muted-foreground">
-                        {route.departureWindowLabel}
-                      </span>
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                {o && d ? (
-                  <CardContent className="pt-0">
-                    <CorridorMapPreview
-                      variant="compact"
-                      origin={o}
-                      destination={d}
-                      encodedPolyline={route.routePolyline ?? null}
-                      straightLineFallback={false}
-                      approximatePickup={{
-                        center: o,
-                        radiusMeters: route.pickupFuzzRadiusM,
-                      }}
-                      originTitle={TRIP_MAP_MARKER.routeStart}
-                      destinationTitle={TRIP_MAP_MARKER.destination}
-                    />
-                  </CardContent>
-                ) : null}
-              </Card>
-            );
-          })
+          data.nearbyRoutes.map((route) => (
+            <PassengerRouteCorridorCard
+              key={route.routeTemplateId}
+              route={route}
+              hostFallbackLabel="Driver TBD"
+              mapPointerEvents="none"
+              cardId={`passenger-route-card-${route.routeTemplateId}`}
+            >
+              <div className="space-y-2 border-t border-border/60 pt-3">
+                {route.nextTripInstanceId ? (
+                  <Button asChild className="h-12 w-full rounded-2xl text-base font-semibold">
+                    <Link href={ROUTES.passengerPublicRide(route.nextTripInstanceId)}>
+                      View ride
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="secondary" className="h-12 w-full rounded-2xl text-base font-semibold">
+                    <Link href={ROUTES.passengerSearchFocusRoute(route.routeTemplateId, route.name)}>
+                      Your search
+                    </Link>
+                  </Button>
+                )}
+                <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                  {route.nextTripInstanceId
+                    ? "Trip details, request a seat, and pickup status — same as search results."
+                    : "No scheduled run with open seats yet. Use Find a ride with your real pickup and destination — when this corridor matches, you can notify the driver you’re interested even before a run is bookable."}
+                </p>
+              </div>
+            </PassengerRouteCorridorCard>
+          ))
         )}
       </section>
     </div>

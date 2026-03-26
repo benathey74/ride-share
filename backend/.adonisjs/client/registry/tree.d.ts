@@ -20,10 +20,14 @@ export interface ApiDefinition {
     index: typeof routes['passenger_route_suggestions.index']
   }
   passengerTrips: {
+    browse: typeof routes['passenger_trips.browse']
     show: typeof routes['passenger_trips.show']
   }
   tripRequests: {
     store: typeof routes['trip_requests.store']
+  }
+  passengerCorridorInterests: {
+    store: typeof routes['passenger_corridor_interests.store']
   }
   driverDashboard: {
     index: typeof routes['driver_dashboard.index']

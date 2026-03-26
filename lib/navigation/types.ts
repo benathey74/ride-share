@@ -21,6 +21,8 @@ export type BottomNavItem = {
   onBeforeNavigate?: () => void;
   /** Highlights on driver onboarding, finish, and guarded driver routes. */
   driveSlot?: boolean;
+  /** Highlights on `/trips/*` and `/rides/*` (private trip + public ride overview). */
+  riderTripSlot?: boolean;
 };
 
 export type NavIconMap = Record<NavIconKey, LucideIcon>;

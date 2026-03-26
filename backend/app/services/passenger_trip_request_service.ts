@@ -2,7 +2,7 @@ import { Exception } from '@adonisjs/core/exceptions'
 import TripInstance from '#models/trip_instance'
 import TripPassenger from '#models/trip_passenger'
 import TripRequest from '#models/trip_request'
-import { TripInstanceStatus, TripRequestStatus } from '#constants/trip'
+import { TripInstanceStatus, TripPassengerStatus, TripRequestStatus } from '#constants/trip'
 import PrivacyViewService from '#services/privacy_view_service'
 
 const privacy = new PrivacyViewService()
@@ -112,6 +112,81 @@ export default class PassengerTripRequestService {
       viewerRequests,
       templateOriginLabel: trip.routeTemplate?.originLabel ?? null,
       templatePickupRadiusM: privacy.templatePickupRadiusMeters(trip.routeTemplate ?? null),
+    })
+  }
+
+  /**
+   * Browseable trip summary for onboarded passengers (home / search). Does not require a seat
+   * request. Completed or cancelled trips are not exposed (404).
+   */
+  async getTripBrowseForRider(viewerUserId: number, tripInstanceId: number) {
+    const trip = await TripInstance.query()
+      .where('id', tripInstanceId)
+      .preload('driver', (q) => q.preload('publicProfile'))
+      .preload('routeTemplate')
+      .first()
+
+    if (!trip) {
+      throw new Exception('Trip not found', { status: 404 })
+    }
+
+    if (
+      trip.routeStatus === TripInstanceStatus.COMPLETED ||
+      trip.routeStatus === TripInstanceStatus.CANCELLED
+    ) {
+      throw new Exception('Trip not found', { status: 404 })
+    }
+
+    const templatePickupRadiusM = privacy.templatePickupRadiusMeters(trip.routeTemplate ?? null)
+    const templateOriginLabel = trip.routeTemplate?.originLabel ?? null
+
+    const viewerMayOpenPrivateDetail = await this.riderCanAccessTrip(viewerUserId, tripInstanceId)
+
+    const viewerRequest = await TripRequest.query()
+      .where('trip_instance_id', trip.id)
+      .where('rider_user_id', viewerUserId)
+      .orderBy('updated_at', 'desc')
+      .first()
+
+    const confirmedPassenger = await TripPassenger.query()
+      .where('trip_instance_id', trip.id)
+      .where('rider_user_id', viewerUserId)
+      .where('status', TripPassengerStatus.CONFIRMED)
+      .first()
+
+    const viewerSeatRequestStatus = viewerRequest?.status ?? null
+    const isDriver = trip.driverUserId === viewerUserId
+
+    const tripAcceptingRequests =
+      trip.routeStatus === TripInstanceStatus.SCHEDULED ||
+      trip.routeStatus === TripInstanceStatus.IN_PROGRESS
+
+    let canRequestSeat = false
+    if (
+      !isDriver &&
+      tripAcceptingRequests &&
+      trip.seatsRemaining >= 1 &&
+      !confirmedPassenger
+    ) {
+      if (!viewerRequest) {
+        canRequestSeat = true
+      } else if (
+        viewerRequest.status === TripRequestStatus.DECLINED ||
+        viewerRequest.status === TripRequestStatus.CANCELLED
+      ) {
+        canRequestSeat = true
+      }
+    }
+
+    return privacy.shapePassengerTripBrowse({
+      trip,
+      driverPublicProfile: trip.driver.publicProfile ?? null,
+      templateOriginLabel,
+      templatePickupRadiusM,
+      canRequestSeat,
+      viewerIsDriver: isDriver,
+      viewerMayOpenPrivateDetail,
+      viewerSeatRequestStatus,
     })
   }
 }

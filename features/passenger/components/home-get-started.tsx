@@ -15,6 +15,7 @@ import {
 import { PrivacyNotice } from "@/features/shared/components/privacy-notice";
 import { writeStoredWizardRole } from "@/features/onboarding/wizard-storage";
 import { ROUTES } from "@/lib/constants/routes";
+import { PassengerHomeHeroBanner } from "@/features/passenger/components/passenger-home-hero-banner";
 import { cn } from "@/lib/utils";
 import type { OnboardingRole } from "@/features/onboarding/types";
 
@@ -26,20 +27,20 @@ const choices: {
 }[] = [
   {
     role: "passenger",
-    title: "Find a ride",
-    description: "Find rides near you — search routes and request a seat.",
+    title: "I’m riding first",
+    description: "Search driver corridors, request a seat, and track pickups — no driving setup yet.",
     icon: CarFront,
   },
   {
     role: "driver",
-    title: "Offer a ride",
-    description: "Set up to publish corridors and fill your seats.",
+    title: "I’m driving first",
+    description: "Add vehicle details for review, then publish routes and manage seat requests.",
     icon: Car,
   },
   {
     role: "both",
-    title: "Both",
-    description: "Ride some days and drive others — full workspace access.",
+    title: "Both riding and driving",
+    description: "Complete passenger and driver steps so you can switch anytime after approval.",
     icon: Users,
   },
 ];
@@ -54,23 +55,25 @@ export function PassengerHomeGetStarted() {
 
   return (
     <div className="space-y-6 md:space-y-7">
-      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-teal-600 to-secondary p-6 text-primary-foreground shadow-soft-lg">
-        <p className="text-xs font-semibold uppercase tracking-widest text-white/80">Get started</p>
-        <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
-          Set up your profile
-          <br />
-          to use Rides
-        </h2>
-        <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-white/90">
-          One quick registration-style flow saves your workspace identity. Then you can find rides
-          near you or offer seats — your choice below.
+      <PassengerHomeHeroBanner>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary [text-shadow:0_1px_1px_rgba(255,255,255,0.92),0_0_6px_rgba(255,255,255,0.8)]">
+          Get started
         </p>
-      </section>
+        <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-primary [text-shadow:-1px_-1px_0_rgba(255,255,255,0.98),1px_-1px_0_rgba(255,255,255,0.98),-1px_1px_0_rgba(255,255,255,0.98),1px_1px_0_rgba(255,255,255,0.98),0_0_2px_rgba(255,255,255,0.75)]">
+          Finish setup
+          <br />
+          to use the app
+        </h2>
+        <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-primary [text-shadow:0_1px_1px_rgba(255,255,255,0.95),0_0_6px_rgba(255,255,255,0.88),0_0_16px_rgba(255,255,255,0.55)]">
+          We’ll save your workspace profile in one short flow. Pick what you want to do first — you
+          can always ride and drive later; this only sets the first screens.
+        </p>
+      </PassengerHomeHeroBanner>
 
       <section className="space-y-3">
         <SectionHeader
-          title="Choose how you’ll begin"
-          description="This only steers the first-time steps — you can ride and drive later regardless."
+          title="What do you want to do first?"
+          description="Pick the path that matches today — the other role stays available once onboarding is done."
         />
         <div className="grid gap-3">
           {choices.map(({ role, title, description, icon: Icon }) => (
@@ -100,9 +103,9 @@ export function PassengerHomeGetStarted() {
 
       <Card className="rounded-3xl border-dashed border-primary/25">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Prefer the full welcome screen?</CardTitle>
+          <CardTitle className="text-sm font-medium">Want the full welcome flow?</CardTitle>
           <CardDescription className="text-left">
-            Same choices, plus skip options and workspace notes.
+            Same choices with extra context and skip options — useful if you’re unsure which to pick.
           </CardDescription>
         </CardHeader>
         <CardContent>

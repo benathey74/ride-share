@@ -4,21 +4,21 @@
  */
 
 export const TRIP_MAP_MARKER = {
-  routeStart: "Route start",
-  destination: "Destination",
-  confirmedPickup: "Confirmed pickup",
+  routeStart: "Corridor start",
+  destination: "End of corridor",
+  confirmedPickup: "Your pickup (confirmed)",
 } as const;
 
 /** Section / card titles */
 export const TRIP_MAP_SECTION = {
   /** Passenger booked trip detail — map card */
-  passengerDriverRoute: "Your driver's route",
+  passengerDriverRoute: "Corridor for this trip",
   /** Driver: trip request queue — map above request list */
-  driverRouteThisTrip: "Route for this trip",
+  driverRouteThisTrip: "Your corridor for this trip",
 } as const;
 
 export const TRIP_PICKUP_LABEL = {
-  approxEyebrow: "Approx pickup area",
+  approxEyebrow: "Approximate pickup",
   confirmedEyebrow: "Confirmed pickup",
 } as const;
 
@@ -45,17 +45,17 @@ export function passengerBookedMapDescription(input: {
   const { hasPolyline, hasExactPickup } = input;
   if (hasPolyline) {
     return hasExactPickup
-      ? "Teal line: their published driving path. Green: route start · Amber: destination · Blue pin: your confirmed pickup."
-      : "Teal line: their published driving path. Green: route start · Amber: destination · Blue circle: your approx pickup area.";
+      ? "Teal: driver’s path · Green: start · Amber: destination · Blue marker: confirmed pickup point."
+      : "Teal: driver’s path · Green: start · Amber: destination · Blue circle: your approximate pickup zone.";
   }
   return hasExactPickup
-    ? "Straight line: simple corridor link (detailed path not stored). Blue pin: your confirmed pickup."
-    : "Straight line: simple corridor link (detailed path not stored). Blue circle: your approx pickup area.";
+    ? "Straight line: route overview (no turn-by-turn stored). Blue marker: confirmed pickup point."
+    : "Straight line: corridor overview. Blue circle: your approximate pickup zone.";
 }
 
 /** Driver trip requests — map legend */
 export function driverTripRequestsMapDescription(hasPolyline: boolean): string {
   return hasPolyline
-    ? "Teal line: the route you published. Green: start · Amber: destination. Each card shows that rider’s pickup (approx until you accept, then confirmed when saved)."
-    : "Straight line: start-to-end estimate (no detailed path stored). Each rider’s pickup is in the cards below.";
+    ? "Teal: your published path · Green: start · Amber: destination. Cards below: each rider’s pickup (approx until you accept; confirmed pickup appears when available)."
+    : "Straight line: route overview. Rider pickups are in the cards — approximate until you accept; confirmed pickup appears when available.";
 }
